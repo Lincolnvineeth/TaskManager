@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .task-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .comment-section {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .comment-section.expanded {
+            max-height: 500px;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8 bg-white p-8 rounded-xl shadow-lg border-b-4 border-indigo-600">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-extrabold text-indigo-800 mb-2">Project Explorer</h1>
+                    <p class="text-lg text-gray-600 font-medium">
+                        <span class="mr-2"><i class="fas fa-folder mr-1"></i>Projects</span>
+                        <span class="mr-2"><i class="fas fa-chevron-right"></i></span>
+                        <span class="mr-2"><i class="fas fa-folder-open mr-1"></i>Current Project</span>
+                    </p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-tasks text-3xl text-indigo-600"></i>
+                    </div>
+                    <button class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                        <i class="fas fa-plus mr-2"></i>New Folder
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Folder Structure -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-lg mb-6 p-4">
+                    <h3 class="font-bold text-lg mb-3 text-indigo-800 flex items-center">
+                        <i class="fas fa-folder-tree mr-2"></i>Project Folders
+                    </h3>
+                    <div class="space-y-1">
+                        <div class="flex items-center text-gray-700 hover:text-indigo-600 cursor-pointer py-1 px-2 rounded">
+                            <i class="fas fa-folder mr-2"></i>Root Folder
+                        </div>
+                        <div class="ml-4 space-y-1 border-l-2 border-gray-200 pl-3">
+                            <div class="flex items-center text-gray-700 hover:text-indigo-600 cursor-pointer py-1 px-2 rounded">
+                                <i class="fas fa-folder mr-2"></i>Documents
+                            </div>
+                            <div class="flex items-center text-gray-700 hover:text-indigo-600 cursor-pointer py-1 px-2 rounded">
+                                <i class="fas fa-folder mr-2"></i>Images
+                            </div>
+                            <div class="flex items-center text-gray-700 hover:text-indigo-600 cursor-pointer py-1 px-2 rounded">
+                                <i class="fas fa-folder-open mr-2"></i>Current Project
+                            </div>
+                            <div class="ml-4 space-y-1 border-l-2 border-gray-200 pl-3">
+                                <div class="flex items-center text-gray-700 hover:text-indigo-600 cursor-pointer py-1 px-2 rounded">
+                                    <i class="fas fa-folder mr-2"></i>Subfolder 1
+                                </div>
+                                <div class="flex items-center text-gray-700 hover:text-indigo-600 cursor-pointer py-1 px-2 rounded">
+                                    <i class="fas fa-folder mr-2"></i>Subfolder 2
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task Form -->
+                <div class="bg-white rounded-xl shadow-xl p-6 sticky top-4 border-l-4 border-indigo-600">
+                    <div class="text-sm text-gray-500 mb-2 flex items-center">
+                        <i class="fas fa-folder mr-1 text-yellow-500"></i>
+                        <span>Projects / Current Project</span>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-6 text-indigo-800 border-b pb-2">
+                        <span v-if="editingTask">Edit Task</span>
+                        <span v-else>Add New Task</span>
+                    </h2>
+                    <form @submit.prevent="editingTask ? updateTask() : createTask()">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 mb-2" for="title">Title</label>
+                            <input v-model="currentTask.title" id="title" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 mb-2" for="description">Description</label>
+                            <textarea v-model="currentTask.description" id="description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 mb-2" for="status">Status</label>
+                            <select v-model="currentTask.status" id="status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="todo">To Do</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="done">Done</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 mb-2" for="priority">Priority</label>
+                            <select v-model="currentTask.priority" id="priority" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
+                            <span v-if="editingTask">Update Task</span>
+                            <span v-else>Add Task</span>
+                        </button>
+                        <button v-if="editingTask" @click="cancelEdit" type="button" class="w-full mt-2 bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition">
+                            Cancel
+                        </button>
+                    </form>
+               
